@@ -36,9 +36,9 @@ Data flows from healthcare staff and patients through AWS WAF to the React front
 
 ## Screenshots
 
-[![Threat Model Preview](screenshots/Website.png)](https://htmlpreview.github.io/?https://github.com/nfroze/Project-4-Threat-Modeling-Incident-Response/blob/main/docs/ThreatModel.html)
+[![Threat Model Preview](screenshots/Website.png)](https://nfroze.github.io/Healthcare-Threat-Model/docs/ThreatModel.html)
 
-[View Interactive Threat Model →](https://htmlpreview.github.io/?https://github.com/nfroze/Project-4-Threat-Modeling-Incident-Response/blob/main/docs/ThreatModel.html)
+[View Interactive Threat Model →](https://nfroze.github.io/Healthcare-Threat-Model/docs/ThreatModel.html)
 
 ## Author
 
