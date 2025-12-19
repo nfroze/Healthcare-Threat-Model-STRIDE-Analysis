@@ -1,0 +1,1752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CareConnect360 Threat Model</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0e17;
+            --bg-secondary: #111827;
+            --bg-tertiary: #1a2332;
+            --bg-elevated: #1f2937;
+            --border-color: #2d3a4f;
+            --border-glow: #00ffaa15;
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-primary: #00ffaa;
+            --accent-secondary: #00d4ff;
+            --accent-tertiary: #a855f7;
+            --risk-high: #ff4757;
+            --risk-high-bg: #ff475715;
+            --risk-medium: #ffa502;
+            --risk-medium-bg: #ffa50215;
+            --risk-low: #2ed573;
+            --risk-low-bg: #2ed57315;
+            --code-bg: #0d1117;
+            --code-border: #30363d;
+            --syntax-keyword: #ff7b72;
+            --syntax-string: #a5d6ff;
+            --syntax-function: #d2a8ff;
+            --syntax-comment: #8b949e;
+            --syntax-number: #79c0ff;
+            --syntax-property: #7ee787;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.7;
+            font-size: 16px;
+            min-height: 100vh;
+        }
+
+        /* Animated background grid */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(var(--border-color) 1px, transparent 1px),
+                linear-gradient(90deg, var(--border-color) 1px, transparent 1px);
+            background-size: 50px 50px;
+            opacity: 0.15;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        /* Glow orbs */
+        .glow-orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.15;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .glow-orb-1 {
+            width: 600px;
+            height: 600px;
+            background: var(--accent-primary);
+            top: -200px;
+            right: -200px;
+        }
+
+        .glow-orb-2 {
+            width: 400px;
+            height: 400px;
+            background: var(--accent-tertiary);
+            bottom: 20%;
+            left: -100px;
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(10, 14, 23, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+            z-index: 1000;
+            padding: 0 2rem;
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 70px;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: var(--text-primary);
+            text-decoration: none;
+        }
+
+        .nav-brand-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 8px;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--accent-primary);
+            background: var(--bg-tertiary);
+        }
+
+        .nav-meta {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .classification-badge {
+            padding: 6px 14px;
+            background: var(--risk-high-bg);
+            border: 1px solid var(--risk-high);
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--risk-high);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Main content */
+        main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 120px 2rem 4rem;
+        }
+
+        /* Hero section */
+        .hero {
+            margin-bottom: 4rem;
+            padding-bottom: 4rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .hero-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--accent-primary);
+            margin-bottom: 1.5rem;
+            padding: 8px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+        }
+
+        .hero-eyebrow::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: var(--accent-primary);
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 700;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .meta-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .meta-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+        }
+
+        .meta-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        /* Section styles */
+        section {
+            margin-bottom: 4rem;
+        }
+
+        h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        h2::before {
+            content: '';
+            width: 4px;
+            height: 28px;
+            background: linear-gradient(180deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 2px;
+        }
+
+        h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin: 2rem 0 1rem;
+            color: var(--text-primary);
+        }
+
+        h4 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            margin: 1.5rem 0 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        p {
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+
+        strong {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        /* Executive summary card */
+        .summary-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .summary-card p {
+            font-size: 1.05rem;
+            line-height: 1.8;
+        }
+
+        .key-findings {
+            background: linear-gradient(135deg, var(--risk-high-bg), transparent);
+            border: 1px solid var(--risk-high);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .key-findings-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--risk-high);
+            margin-bottom: 0.75rem;
+        }
+
+        .key-findings p {
+            margin: 0;
+            color: var(--text-secondary);
+        }
+
+        /* Architecture diagram */
+        .architecture-container {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Tables */
+        .table-container {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        thead {
+            background: var(--bg-tertiary);
+        }
+
+        th {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600;
+            text-align: left;
+            padding: 1rem 1.25rem;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border-color);
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            vertical-align: top;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr {
+            transition: background 0.2s ease;
+        }
+
+        tbody tr:hover {
+            background: var(--bg-tertiary);
+        }
+
+        /* Risk badges */
+        .risk-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .risk-high {
+            background: var(--risk-high-bg);
+            color: var(--risk-high);
+            border: 1px solid var(--risk-high);
+        }
+
+        .risk-medium {
+            background: var(--risk-medium-bg);
+            color: var(--risk-medium);
+            border: 1px solid var(--risk-medium);
+        }
+
+        .risk-low {
+            background: var(--risk-low-bg);
+            color: var(--risk-low);
+            border: 1px solid var(--risk-low);
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .status-not-addressed {
+            background: var(--risk-high-bg);
+            color: var(--risk-high);
+        }
+
+        .status-partial {
+            background: var(--risk-medium-bg);
+            color: var(--risk-medium);
+        }
+
+        .status-addressed {
+            background: var(--risk-low-bg);
+            color: var(--risk-low);
+        }
+
+        .threat-id {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            color: var(--accent-secondary);
+        }
+
+        .category-badge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            padding: 4px 8px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            color: var(--text-muted);
+        }
+
+        /* Mitigation cards */
+        .mitigation-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            margin-bottom: 2rem;
+            overflow: hidden;
+        }
+
+        .mitigation-header {
+            background: var(--bg-tertiary);
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .mitigation-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .mitigation-title h3 {
+            margin: 0;
+            font-size: 1.1rem;
+        }
+
+        .mitigation-body {
+            padding: 1.5rem;
+        }
+
+        .threat-description {
+            background: var(--bg-primary);
+            border-left: 3px solid var(--risk-high);
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.5rem;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .threat-description strong {
+            color: var(--risk-high);
+        }
+
+        .recommendation {
+            margin-bottom: 1.5rem;
+        }
+
+        /* Code blocks */
+        pre {
+            background: var(--code-bg);
+            border: 1px solid var(--code-border);
+            border-radius: 12px;
+            padding: 1.25rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+            position: relative;
+        }
+
+        pre::before {
+            content: attr(data-language);
+            position: absolute;
+            top: 0;
+            right: 0;
+            padding: 4px 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            background: var(--bg-tertiary);
+            border-radius: 0 12px 0 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+
+        .code-line {
+            display: block;
+        }
+
+        .keyword { color: var(--syntax-keyword); }
+        .string { color: var(--syntax-string); }
+        .function { color: var(--syntax-function); }
+        .comment { color: var(--syntax-comment); font-style: italic; }
+        .number { color: var(--syntax-number); }
+        .property { color: var(--syntax-property); }
+
+        /* Additional controls list */
+        .controls-list {
+            list-style: none;
+            margin: 1rem 0;
+            padding: 0;
+        }
+
+        .controls-list li {
+            position: relative;
+            padding-left: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+        }
+
+        .controls-list li::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: var(--accent-primary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Risk summary cards */
+        .risk-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .risk-summary-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .risk-summary-card.high {
+            border-color: var(--risk-high);
+            background: var(--risk-high-bg);
+        }
+
+        .risk-summary-card.medium {
+            border-color: var(--risk-medium);
+            background: var(--risk-medium-bg);
+        }
+
+        .risk-count {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 3rem;
+            font-weight: 700;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+        }
+
+        .high .risk-count { color: var(--risk-high); }
+        .medium .risk-count { color: var(--risk-medium); }
+
+        .risk-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .risk-action {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .overall-risk {
+            background: linear-gradient(135deg, var(--risk-high-bg), var(--bg-secondary));
+            border: 2px solid var(--risk-high);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .overall-risk-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .overall-risk-value {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--risk-high);
+            margin-bottom: 1rem;
+        }
+
+        .overall-risk p {
+            margin: 0;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Priority actions */
+        .priority-actions {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+        }
+
+        .priority-action {
+            display: flex;
+            gap: 1rem;
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .priority-action:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .priority-action:first-child {
+            padding-top: 0;
+        }
+
+        .priority-timeline {
+            flex-shrink: 0;
+            width: 100px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--accent-primary);
+        }
+
+        .priority-content {
+            color: var(--text-secondary);
+        }
+
+        /* References */
+        .references-list {
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .reference-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .reference-item:hover {
+            border-color: var(--accent-primary);
+            background: var(--bg-tertiary);
+        }
+
+        .reference-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 1.2rem;
+        }
+
+        .reference-content {
+            flex-grow: 1;
+        }
+
+        .reference-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .reference-url {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            word-break: break-all;
+        }
+
+        /* Document history */
+        .doc-history {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        /* Footer */
+        footer {
+            margin-top: 4rem;
+            padding: 2rem;
+            text-align: center;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .footer-notice {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            padding: 1rem 2rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            display: inline-block;
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        section {
+            animation: fadeInUp 0.6s ease-out backwards;
+        }
+
+        section:nth-child(1) { animation-delay: 0.1s; }
+        section:nth-child(2) { animation-delay: 0.15s; }
+        section:nth-child(3) { animation-delay: 0.2s; }
+        section:nth-child(4) { animation-delay: 0.25s; }
+        section:nth-child(5) { animation-delay: 0.3s; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            nav {
+                padding: 0 1rem;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            main {
+                padding: 100px 1rem 2rem;
+            }
+
+            .hero-meta {
+                gap: 1rem;
+            }
+
+            table {
+                font-size: 0.8rem;
+            }
+
+            th, td {
+                padding: 0.75rem;
+            }
+
+            .mitigation-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .risk-summary-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="glow-orb glow-orb-1"></div>
+    <div class="glow-orb glow-orb-2"></div>
+
+    <nav>
+        <div class="nav-container">
+            <a href="#" class="nav-brand">
+                <span class="nav-brand-icon">🛡️</span>
+                CareConnect360
+            </a>
+            <div class="nav-links">
+                <a href="#summary">Summary</a>
+                <a href="#architecture">Architecture</a>
+                <a href="#assets">Assets</a>
+                <a href="#threats">Threats</a>
+                <a href="#mitigations">Mitigations</a>
+                <a href="#hipaa">HIPAA</a>
+                <a href="#risk">Risk</a>
+            </div>
+            <div class="nav-meta">
+                <span class="classification-badge">Security Sensitive</span>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <header class="hero">
+            <div class="hero-eyebrow">Threat Model v1.0</div>
+            <h1>CareConnect360<br>Security Assessment</h1>
+            <div class="hero-meta">
+                <div class="meta-item">
+                    <span class="meta-label">Version</span>
+                    <span class="meta-value">1.0</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Date</span>
+                    <span class="meta-value">December 19, 2025</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Author</span>
+                    <span class="meta-value">Security Architecture Team</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Status</span>
+                    <span class="meta-value">Draft</span>
+                </div>
+            </div>
+        </header>
+
+        <section id="summary">
+            <h2>Executive Summary</h2>
+            <div class="summary-card">
+                <p>CareConnect360 is a cloud-hosted healthcare patient management system built on AWS infrastructure using a microservices architecture. The platform enables healthcare organizations to manage patient records, appointments, medications, and telehealth sessions through a publicly accessible web portal. Given its handling of Protected Health Information (PHI) and Personally Identifiable Information (PII), the system falls under HIPAA regulatory requirements and represents a high-value target for threat actors.</p>
+                <p>This threat model assesses the security posture of CareConnect360's core components: Amazon Cognito authentication, JWT session management, MariaDB patient data storage, S3 file storage, real-time WebRTC/Socket.IO communications, and third-party API integrations. The analysis identifies <strong>15 prioritized threats</strong> across authentication bypass, data exposure, API abuse, and infrastructure compromise categories.</p>
+                
+                <div class="key-findings">
+                    <div class="key-findings-title">
+                        <span>⚠️</span> Key Findings
+                    </div>
+                    <p>The current architecture has significant gaps in JWT validation hardening, S3 access controls, WebRTC TURN server authentication, and audit logging completeness. <strong>Eight high-risk threats require immediate remediation</strong> to achieve acceptable HIPAA compliance posture. The third-party integration with MedTrack Pro introduces supply chain risk that is not adequately addressed by current controls.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="architecture">
+            <h2>Architecture Diagram</h2>
+            <div class="architecture-container">
+                <div class="mermaid">
+flowchart TB
+    subgraph Internet["Internet (Untrusted)"]
+        User[Healthcare Staff]
+        Patient[Patient Portal Users]
+        ExtAPI[MedTrack Pro API]
+    end
+
+    subgraph TrustBoundary1["DMZ - Public Facing"]
+        WAF[AWS WAF]
+        ALB[Application Load Balancer]
+    end
+
+    subgraph TrustBoundary2["Application Tier"]
+        React[React Frontend<br/>Apache/EC2]
+        NodeAPI[Node.js API<br/>Express.js]
+        Lambda[AWS Lambda<br/>Serverless Functions]
+        WebRTC[WebRTC Gateway<br/>Telehealth Video]
+        SocketIO[Socket.IO Server<br/>Real-time Messaging]
+    end
+
+    subgraph TrustBoundary3["Authentication"]
+        Cognito[Amazon Cognito<br/>User Pools + 2FA]
+        JWT[JWT Token Service]
+    end
+
+    subgraph TrustBoundary4["Data Tier"]
+        MariaDB[(MariaDB<br/>Patient Records)]
+        S3[(AWS S3<br/>File Storage)]
+    end
+
+    subgraph TrustBoundary5["Monitoring"]
+        Prometheus[Prometheus]
+        ELK[ELK Stack]
+    end
+
+    User --> WAF
+    Patient --> WAF
+    WAF --> ALB
+    ALB --> React
+    React --> NodeAPI
+    NodeAPI --> Cognito
+    Cognito --> JWT
+    NodeAPI --> MariaDB
+    NodeAPI --> S3
+    NodeAPI --> Lambda
+    NodeAPI --> WebRTC
+    NodeAPI --> SocketIO
+    NodeAPI --> ExtAPI
+    NodeAPI --> Prometheus
+    NodeAPI --> ELK
+    Lambda --> MariaDB
+    Lambda --> S3
+                </div>
+            </div>
+        </section>
+
+        <section id="assets">
+            <h2>Assets Inventory</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Asset</th>
+                            <th>Description</th>
+                            <th>Classification</th>
+                            <th>Owner</th>
+                            <th>Location</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Patient Records</strong></td>
+                            <td>Name, DOB, SSN, address, medical history</td>
+                            <td><span class="risk-badge risk-high">PHI/PII Critical</span></td>
+                            <td>Data Team</td>
+                            <td>MariaDB</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Medical Documents</strong></td>
+                            <td>Lab results, imaging, prescriptions</td>
+                            <td><span class="risk-badge risk-high">PHI Critical</span></td>
+                            <td>Data Team</td>
+                            <td>S3</td>
+                        </tr>
+                        <tr>
+                            <td><strong>User Credentials</strong></td>
+                            <td>Passwords, MFA secrets, session tokens</td>
+                            <td><span class="risk-badge risk-medium">Sensitive</span></td>
+                            <td>Security Team</td>
+                            <td>Cognito</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Appointment Data</strong></td>
+                            <td>Scheduling, provider assignments</td>
+                            <td><span class="risk-badge risk-high">PHI High</span></td>
+                            <td>Application Team</td>
+                            <td>MariaDB</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Medication Records</strong></td>
+                            <td>Prescriptions, dosages, refill history</td>
+                            <td><span class="risk-badge risk-high">PHI Critical</span></td>
+                            <td>Data Team</td>
+                            <td>MariaDB</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Telehealth Sessions</strong></td>
+                            <td>Video streams, chat transcripts</td>
+                            <td><span class="risk-badge risk-high">PHI Critical</span></td>
+                            <td>Application Team</td>
+                            <td>WebRTC/S3</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Audit Logs</strong></td>
+                            <td>Access logs, authentication events</td>
+                            <td><span class="risk-badge risk-medium">Sensitive</span></td>
+                            <td>Security Team</td>
+                            <td>ELK Stack</td>
+                        </tr>
+                        <tr>
+                            <td><strong>API Keys</strong></td>
+                            <td>Third-party integration credentials</td>
+                            <td><span class="risk-badge risk-medium">Sensitive</span></td>
+                            <td>DevOps Team</td>
+                            <td>AWS Secrets Manager</td>
+                        </tr>
+                        <tr>
+                            <td><strong>JWT Signing Keys</strong></td>
+                            <td>Token signing/verification keys</td>
+                            <td><span class="risk-badge risk-high">Critical</span></td>
+                            <td>Security Team</td>
+                            <td>Cognito/EC2</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="threats">
+            <h2>Threat Register</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Category</th>
+                            <th>Threat</th>
+                            <th>Component</th>
+                            <th>Risk</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="threat-id">AUTH-01</span></td>
+                            <td><span class="category-badge">Spoofing</span></td>
+                            <td>JWT algorithm confusion—attacker substitutes RS256 with HS256 using public key as secret</td>
+                            <td>JWT Authentication</td>
+                            <td><span class="risk-badge risk-high">High</span></td>
+                            <td><span class="status-badge status-not-addressed">Not Addressed</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="threat-id">AUTH-02</span></td>
+                            <td><span class="category-badge">Spoofing</span></td>
+                            <td>Cognito user enumeration via differential response timing on login attempts</td>
+                            <td>Amazon Cognito</td>
+                            <td><span class="risk-badge risk-medium">Medium</span></td>
+                            <td><span class="status-badge status-not-addressed">Not Addressed</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="threat-id">AUTH-03</span></td>
+                            <td><span class="category-badge">Elevation of Privilege</span></td>
+                            <td>JWT token theft via XSS allows session hijacking with full user privileges</td>
+                            <td>Frontend/JWT</td>
+                            <td><span class="risk-badge risk-high">High</span></td>
+                            <td><span class="status-badge status-partial">Partial</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="threat-id">AUTH-04</span></td>
+                            <td><span class="category-badge">Repudiation</span></td>
+                            <td>Insufficient logging of authentication failures prevents breach detection</td>
+                            <td>ELK Stack</td>
+                            <td><span class="risk-badge risk-medium">Medium</span></td>
+                            <td><span class="status-badge status-not-addressed">Not Addressed</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="threat-id">DATA-01</span></td>
+                            <td><span class="category-badge">Info Disclosure</span></td>
+                            <td>S3 bucket misconfiguration exposes patient documents publicly</td>
+                            <td>S3 Storage</td>
+                            <td><span class="risk-badge risk-high">High</span></td>
+                            <td><span class="status-badge status-not-addressed">Not Addressed</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="threat-id">DATA-02</span></td>
+                            <td><span class="category-badge">Info Disclosure</span></td>
+                            <td>MariaDB connection strings hardcoded in application code or environment variables</td>
+                            <td>Node.js API</td>
+                            <td><span class="risk-badge risk-high">High</span></td>
+                            <td><span class="status-badge status-not-addressed">Not Addressed</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="threat-id">DATA-03</span></td>
+                            <td><span class="category-badge">Tampering</span></td>
+                            <td>SQL injection in patient search endpoint modifies or extracts PHI</td>
+                            <td>MariaDB/API</td>
+                            <td><span class="risk-badge risk-high">High</span></td>
+                            <td><span class="status-badge status-not-addressed">Not Addressed</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="threat-id">API-01</span></td>
+                            <td><span class="category-badge">Elevation of Privilege</span></td>
+                            <td>IDOR vulnerability allows patients to access other patients' records via predictable IDs</td>
+                            <td>Patient API</td>
+                            <td><span class="risk-badge risk-high">High</span></td>
+                            <td><span class="status-badge status-not-addressed">Not Addressed</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="threat-id">API-02</span></td>
+                            <td><span class="category-badge">DoS</span></td>
+                            <td>Lack of rate limiting enables API abuse and resource exhaustion</td>
+                            <td>Node.js API</td>
+                            <td><span class="risk-badge risk-medium">Medium</span></td>
+                            <td><span class="status-badge status-not-addressed">Not Addressed</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="threat-id">API-03</span></td>
+                            <td><span class="category-badge">Spoofing</span></td>
+                            <td>MedTrack Pro API key compromise enables unauthorized medication data access</td>
+                            <td>Third-party Integration</td>
+                            <td><span class="risk-badge risk-high">High</span></td>
+                            <td><span class="status-badge status-not-addressed">Not Addressed</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="threat-id">RTC-01</span></td>
+                            <td><span class="category-badge">Info Disclosure</span></td>
+                            <td>WebRTC TURN server lacks authentication, allowing unauthorized relay usage</td>
+                            <td>WebRTC Gateway</td>
+                            <td><span class="risk-badge risk-high">High</span></td>
+                            <td><span class="status-badge status-not-addressed">Not Addressed</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="threat-id">RTC-02</span></td>
+                            <td><span class="category-badge">Info Disclosure</span></td>
+                            <td>Socket.IO connections lack origin validation, enabling cross-site hijacking</td>
+                            <td>Socket.IO Server</td>
+                            <td><span class="risk-badge risk-medium">Medium</span></td>
+                            <td><span class="status-badge status-not-addressed">Not Addressed</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="threat-id">INFRA-01</span></td>
+                            <td><span class="category-badge">Elevation of Privilege</span></td>
+                            <td>Lambda function IAM roles overly permissive, enabling lateral movement</td>
+                            <td>AWS Lambda</td>
+                            <td><span class="risk-badge risk-medium">Medium</span></td>
+                            <td><span class="status-badge status-not-addressed">Not Addressed</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="threat-id">INFRA-02</span></td>
+                            <td><span class="category-badge">Info Disclosure</span></td>
+                            <td>Prometheus metrics endpoint exposed without authentication leaks system info</td>
+                            <td>Prometheus</td>
+                            <td><span class="risk-badge risk-medium">Medium</span></td>
+                            <td><span class="status-badge status-not-addressed">Not Addressed</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="threat-id">INFRA-03</span></td>
+                            <td><span class="category-badge">Tampering</span></td>
+                            <td>GitHub Actions workflow injection via malicious PR modifies deployment</td>
+                            <td>CI/CD Pipeline</td>
+                            <td><span class="risk-badge risk-high">High</span></td>
+                            <td><span class="status-badge status-not-addressed">Not Addressed</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="mitigations">
+            <h2>Mitigations</h2>
+
+            <div class="mitigation-card">
+                <div class="mitigation-header">
+                    <div class="mitigation-title">
+                        <span class="threat-id">AUTH-01</span>
+                        <h3>Pin JWT Algorithm in Verification</h3>
+                    </div>
+                    <span class="risk-badge risk-high">High Risk</span>
+                </div>
+                <div class="mitigation-body">
+                    <div class="threat-description">
+                        <strong>Threat:</strong> JWT algorithm confusion attack allows signature bypass
+                    </div>
+                    <div class="recommendation">
+                        <h4>Recommendation</h4>
+                        <p>Explicitly restrict accepted algorithms during token verification. Never allow the algorithm to be derived from the token header alone.</p>
+                    </div>
+                    <pre data-language="JavaScript"><code><span class="keyword">const</span> jwt = <span class="function">require</span>(<span class="string">'jsonwebtoken'</span>);
+
+<span class="keyword">const</span> <span class="function">verifyToken</span> = (token) => {
+  <span class="keyword">return</span> jwt.<span class="function">verify</span>(token, publicKey, {
+    <span class="property">algorithms</span>: [<span class="string">'RS256'</span>], <span class="comment">// Explicitly pin algorithm</span>
+    <span class="property">issuer</span>: <span class="string">'https://cognito-idp.us-east-1.amazonaws.com/YOUR_POOL_ID'</span>,
+    <span class="property">audience</span>: <span class="string">'YOUR_CLIENT_ID'</span>
+  });
+};</code></pre>
+                    <h4>Additional Controls</h4>
+                    <ul class="controls-list">
+                        <li>Rotate signing keys quarterly via Cognito key rotation</li>
+                        <li>Monitor for tokens with unexpected algorithm headers in ELK</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="mitigation-card">
+                <div class="mitigation-header">
+                    <div class="mitigation-title">
+                        <span class="threat-id">AUTH-03</span>
+                        <h3>Implement Secure Token Storage</h3>
+                    </div>
+                    <span class="risk-badge risk-high">High Risk</span>
+                </div>
+                <div class="mitigation-body">
+                    <div class="threat-description">
+                        <strong>Threat:</strong> XSS-based JWT theft enables session hijacking
+                    </div>
+                    <div class="recommendation">
+                        <h4>Recommendation</h4>
+                        <p>Store tokens in HttpOnly cookies instead of localStorage. Implement Content Security Policy headers.</p>
+                    </div>
+                    <pre data-language="JavaScript"><code><span class="comment">// Express.js cookie configuration</span>
+res.<span class="function">cookie</span>(<span class="string">'accessToken'</span>, token, {
+  <span class="property">httpOnly</span>: <span class="keyword">true</span>,
+  <span class="property">secure</span>: <span class="keyword">true</span>,
+  <span class="property">sameSite</span>: <span class="string">'strict'</span>,
+  <span class="property">maxAge</span>: <span class="number">3600000</span> <span class="comment">// 1 hour</span>
+});</code></pre>
+                    <h4>CSP Header Configuration</h4>
+                    <pre data-language="HTTP"><code>Content-Security-Policy: default-src 'self'; script-src 'self'; connect-src 'self' wss://your-domain.com</code></pre>
+                </div>
+            </div>
+
+            <div class="mitigation-card">
+                <div class="mitigation-header">
+                    <div class="mitigation-title">
+                        <span class="threat-id">DATA-01</span>
+                        <h3>Enforce S3 Private Access</h3>
+                    </div>
+                    <span class="risk-badge risk-high">High Risk</span>
+                </div>
+                <div class="mitigation-body">
+                    <div class="threat-description">
+                        <strong>Threat:</strong> Public bucket exposure leaks patient documents
+                    </div>
+                    <div class="recommendation">
+                        <h4>Recommendation</h4>
+                        <p>Enable S3 Block Public Access at account level and enforce secure transport via bucket policy.</p>
+                    </div>
+                    <pre data-language="JSON"><code>{
+  <span class="property">"Version"</span>: <span class="string">"2012-10-17"</span>,
+  <span class="property">"Statement"</span>: [
+    {
+      <span class="property">"Sid"</span>: <span class="string">"DenyInsecureTransport"</span>,
+      <span class="property">"Effect"</span>: <span class="string">"Deny"</span>,
+      <span class="property">"Principal"</span>: <span class="string">"*"</span>,
+      <span class="property">"Action"</span>: <span class="string">"s3:*"</span>,
+      <span class="property">"Resource"</span>: [
+        <span class="string">"arn:aws:s3:::careconnect360-patient-docs"</span>,
+        <span class="string">"arn:aws:s3:::careconnect360-patient-docs/*"</span>
+      ],
+      <span class="property">"Condition"</span>: {
+        <span class="property">"Bool"</span>: { <span class="property">"aws:SecureTransport"</span>: <span class="string">"false"</span> }
+      }
+    }
+  ]
+}</code></pre>
+                </div>
+            </div>
+
+            <div class="mitigation-card">
+                <div class="mitigation-header">
+                    <div class="mitigation-title">
+                        <span class="threat-id">DATA-03</span>
+                        <h3>Implement Parameterized Queries</h3>
+                    </div>
+                    <span class="risk-badge risk-high">High Risk</span>
+                </div>
+                <div class="mitigation-body">
+                    <div class="threat-description">
+                        <strong>Threat:</strong> SQL injection in patient search endpoints
+                    </div>
+                    <div class="recommendation">
+                        <h4>Recommendation</h4>
+                        <p>Use parameterized queries exclusively. Enable MariaDB query logging for injection attempt detection.</p>
+                    </div>
+                    <pre data-language="JavaScript"><code><span class="comment">// Using mysql2 with prepared statements</span>
+<span class="keyword">const</span> <span class="function">searchPatients</span> = <span class="keyword">async</span> (searchTerm) => {
+  <span class="keyword">const</span> [rows] = <span class="keyword">await</span> pool.<span class="function">execute</span>(
+    <span class="string">'SELECT id, name, dob FROM patients WHERE name LIKE ? OR mrn = ?'</span>,
+    [<span class="string">`%${searchTerm}%`</span>, searchTerm]
+  );
+  <span class="keyword">return</span> rows;
+};</code></pre>
+                    <h4>Input Validation Layer</h4>
+                    <pre data-language="JavaScript"><code><span class="keyword">const</span> Joi = <span class="function">require</span>(<span class="string">'joi'</span>);
+
+<span class="keyword">const</span> patientSearchSchema = Joi.<span class="function">object</span>({
+  <span class="property">query</span>: Joi.<span class="function">string</span>().<span class="function">max</span>(<span class="number">100</span>).<span class="function">pattern</span>(<span class="string">/^[a-zA-Z0-9\s\-]+$/</span>).<span class="function">required</span>()
+});</code></pre>
+                </div>
+            </div>
+
+            <div class="mitigation-card">
+                <div class="mitigation-header">
+                    <div class="mitigation-title">
+                        <span class="threat-id">API-01</span>
+                        <h3>Implement Authorization Checks for IDOR Prevention</h3>
+                    </div>
+                    <span class="risk-badge risk-high">High Risk</span>
+                </div>
+                <div class="mitigation-body">
+                    <div class="threat-description">
+                        <strong>Threat:</strong> Insecure Direct Object Reference allows cross-patient data access
+                    </div>
+                    <div class="recommendation">
+                        <h4>Recommendation</h4>
+                        <p>Validate resource ownership on every request. Implement middleware that verifies the authenticated user has access to the requested patient record.</p>
+                    </div>
+                    <pre data-language="JavaScript"><code><span class="keyword">const</span> <span class="function">authorizePatientAccess</span> = <span class="keyword">async</span> (req, res, next) => {
+  <span class="keyword">const</span> requestedPatientId = req.params.patientId;
+  <span class="keyword">const</span> userId = req.user.sub; <span class="comment">// From JWT</span>
+  
+  <span class="keyword">const</span> hasAccess = <span class="keyword">await</span> <span class="function">checkPatientAccess</span>(userId, requestedPatientId);
+  
+  <span class="keyword">if</span> (!hasAccess) {
+    logger.<span class="function">warn</span>(<span class="string">'IDOR attempt'</span>, { userId, requestedPatientId, <span class="property">ip</span>: req.ip });
+    <span class="keyword">return</span> res.<span class="function">status</span>(<span class="number">403</span>).<span class="function">json</span>({ <span class="property">error</span>: <span class="string">'Access denied'</span> });
+  }
+  <span class="function">next</span>();
+};
+
+app.<span class="function">get</span>(<span class="string">'/api/patients/:patientId'</span>, authorizePatientAccess, getPatientHandler);</code></pre>
+                </div>
+            </div>
+
+            <div class="mitigation-card">
+                <div class="mitigation-header">
+                    <div class="mitigation-title">
+                        <span class="threat-id">API-03</span>
+                        <h3>Secure Third-Party API Integration</h3>
+                    </div>
+                    <span class="risk-badge risk-high">High Risk</span>
+                </div>
+                <div class="mitigation-body">
+                    <div class="threat-description">
+                        <strong>Threat:</strong> MedTrack Pro API key compromise
+                    </div>
+                    <div class="recommendation">
+                        <h4>Recommendation</h4>
+                        <p>Store API keys in AWS Secrets Manager with rotation. Implement request signing and IP allowlisting.</p>
+                    </div>
+                    <pre data-language="JavaScript"><code><span class="comment">// Rotate keys and use short-lived tokens where supported</span>
+<span class="keyword">const</span> <span class="function">getMedTrackClient</span> = <span class="keyword">async</span> () => {
+  <span class="keyword">const</span> apiKey = <span class="keyword">await</span> <span class="function">getSecretValue</span>(<span class="string">'careconnect360/medtrack/apikey'</span>);
+  <span class="keyword">return</span> axios.<span class="function">create</span>({
+    <span class="property">baseURL</span>: <span class="string">'https://api.medtrackpro.com/v2'</span>,
+    <span class="property">headers</span>: {
+      <span class="string">'X-API-Key'</span>: apiKey,
+      <span class="string">'X-Request-ID'</span>: crypto.<span class="function">randomUUID</span>()
+    },
+    <span class="property">timeout</span>: <span class="number">5000</span>
+  });
+};</code></pre>
+                    <h4>Network Controls</h4>
+                    <ul class="controls-list">
+                        <li>Configure VPC endpoints for outbound API calls</li>
+                        <li>Implement egress filtering to allow only MedTrack Pro IP ranges</li>
+                        <li>Log all third-party API requests to ELK</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="mitigation-card">
+                <div class="mitigation-header">
+                    <div class="mitigation-title">
+                        <span class="threat-id">RTC-01</span>
+                        <h3>Secure WebRTC TURN Server</h3>
+                    </div>
+                    <span class="risk-badge risk-high">High Risk</span>
+                </div>
+                <div class="mitigation-body">
+                    <div class="threat-description">
+                        <strong>Threat:</strong> Unauthenticated TURN server abuse
+                    </div>
+                    <div class="recommendation">
+                        <h4>Recommendation</h4>
+                        <p>Implement time-limited TURN credentials generated per session.</p>
+                    </div>
+                    <pre data-language="JavaScript"><code><span class="keyword">const</span> <span class="function">generateTurnCredentials</span> = (userId) => {
+  <span class="keyword">const</span> timestamp = Math.<span class="function">floor</span>(Date.<span class="function">now</span>() / <span class="number">1000</span>) + <span class="number">3600</span>; <span class="comment">// 1 hour validity</span>
+  <span class="keyword">const</span> username = <span class="string">`${timestamp}:${userId}`</span>;
+  <span class="keyword">const</span> credential = crypto
+    .<span class="function">createHmac</span>(<span class="string">'sha1'</span>, TURN_SECRET)
+    .<span class="function">update</span>(username)
+    .<span class="function">digest</span>(<span class="string">'base64'</span>);
+  
+  <span class="keyword">return</span> {
+    <span class="property">urls</span>: [<span class="string">'turn:turn.careconnect360.com:443?transport=tcp'</span>],
+    username,
+    credential
+  };
+};</code></pre>
+                </div>
+            </div>
+
+            <div class="mitigation-card">
+                <div class="mitigation-header">
+                    <div class="mitigation-title">
+                        <span class="threat-id">INFRA-03</span>
+                        <h3>Secure GitHub Actions Workflows</h3>
+                    </div>
+                    <span class="risk-badge risk-high">High Risk</span>
+                </div>
+                <div class="mitigation-body">
+                    <div class="threat-description">
+                        <strong>Threat:</strong> Workflow injection via malicious pull requests
+                    </div>
+                    <div class="recommendation">
+                        <h4>Recommendation</h4>
+                        <p>Require approval for workflows from first-time contributors. Pin action versions to SHA.</p>
+                    </div>
+                    <pre data-language="YAML"><code><span class="comment"># .github/workflows/deploy.yml</span>
+<span class="property">name</span>: Deploy
+<span class="property">on</span>:
+  <span class="property">push</span>:
+    <span class="property">branches</span>: [main]
+
+<span class="property">permissions</span>:
+  <span class="property">contents</span>: read
+  <span class="property">id-token</span>: write
+
+<span class="property">jobs</span>:
+  <span class="property">deploy</span>:
+    <span class="property">runs-on</span>: ubuntu-latest
+    <span class="property">environment</span>: production  <span class="comment"># Requires approval</span>
+    <span class="property">steps</span>:
+      - <span class="property">uses</span>: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 <span class="comment"># v4.1.1</span>
+      - <span class="property">uses</span>: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502 <span class="comment"># v4.0.2</span>
+        <span class="property">with</span>:
+          <span class="property">role-to-assume</span>: arn:aws:iam::ACCOUNT:role/github-deploy
+          <span class="property">aws-region</span>: us-east-1</code></pre>
+                </div>
+            </div>
+        </section>
+
+        <section id="hipaa">
+            <h2>HIPAA Security Rule Mapping</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>HIPAA Requirement</th>
+                            <th>§164 Reference</th>
+                            <th>Current State</th>
+                            <th>Gap</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Access Control</strong></td>
+                            <td>§164.312(a)(1)</td>
+                            <td>Cognito + JWT implemented</td>
+                            <td><span class="risk-badge risk-high">IDOR vulnerability (API-01) undermines access control</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Audit Controls</strong></td>
+                            <td>§164.312(b)</td>
+                            <td>ELK Stack deployed</td>
+                            <td><span class="risk-badge risk-medium">Insufficient auth failure logging (AUTH-04)</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Integrity Controls</strong></td>
+                            <td>§164.312(c)(1)</td>
+                            <td>TLS in transit stated</td>
+                            <td><span class="risk-badge risk-high">SQL injection risk (DATA-03) threatens integrity</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Transmission Security</strong></td>
+                            <td>§164.312(e)(1)</td>
+                            <td>TLS/SSL configured</td>
+                            <td><span class="risk-badge risk-high">WebRTC TURN lacks auth (RTC-01)</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Person Authentication</strong></td>
+                            <td>§164.312(d)</td>
+                            <td>2FA via Cognito</td>
+                            <td><span class="risk-badge risk-high">JWT algorithm confusion (AUTH-01) bypasses auth</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Encryption</strong></td>
+                            <td>§164.312(a)(2)(iv)</td>
+                            <td>At-rest encryption stated</td>
+                            <td><span class="risk-badge risk-high">S3 bucket policy gaps (DATA-01)</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Contingency Plan</strong></td>
+                            <td>§164.308(a)(7)</td>
+                            <td>Not documented</td>
+                            <td><span class="risk-badge risk-medium">Backup/recovery procedures needed</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Security Incident</strong></td>
+                            <td>§164.308(a)(6)</td>
+                            <td>Prometheus monitoring</td>
+                            <td><span class="risk-badge risk-medium">No incident response playbook documented</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="priority-actions">
+                <h3>Priority HIPAA Remediation Actions</h3>
+                <div class="priority-action">
+                    <div class="priority-timeline">Immediate</div>
+                    <div class="priority-content">Address AUTH-01, DATA-01, API-01 to restore access control integrity</div>
+                </div>
+                <div class="priority-action">
+                    <div class="priority-timeline">30 Days</div>
+                    <div class="priority-content">Implement comprehensive audit logging covering all PHI access</div>
+                </div>
+                <div class="priority-action">
+                    <div class="priority-timeline">60 Days</div>
+                    <div class="priority-content">Document incident response procedures and conduct tabletop exercise</div>
+                </div>
+                <div class="priority-action">
+                    <div class="priority-timeline">90 Days</div>
+                    <div class="priority-content">Complete penetration test and remediate findings</div>
+                </div>
+            </div>
+        </section>
+
+        <section id="risk">
+            <h2>Risk Summary</h2>
+            <div class="risk-summary-grid">
+                <div class="risk-summary-card high">
+                    <div class="risk-count">8</div>
+                    <div class="risk-label">High Risk</div>
+                    <div class="risk-action">Remediate before next release</div>
+                </div>
+                <div class="risk-summary-card medium">
+                    <div class="risk-count">7</div>
+                    <div class="risk-label">Medium Risk</div>
+                    <div class="risk-action">Plan remediation within 30 days</div>
+                </div>
+                <div class="risk-summary-card">
+                    <div class="risk-count">0</div>
+                    <div class="risk-label">Low Risk</div>
+                    <div class="risk-action">—</div>
+                </div>
+            </div>
+
+            <div class="overall-risk">
+                <div class="overall-risk-label">Overall Risk Posture</div>
+                <div class="overall-risk-value">⚠️ HIGH</div>
+                <p>Multiple unaddressed vulnerabilities in authentication and data protection create significant breach risk and HIPAA compliance gaps.</p>
+            </div>
+        </section>
+
+        <section id="references">
+            <h2>References</h2>
+            <div class="references-list">
+                <a href="https://owasp.org/Top10/" class="reference-item" target="_blank">
+                    <div class="reference-icon">📋</div>
+                    <div class="reference-content">
+                        <div class="reference-title">OWASP Top 10 2021</div>
+                        <div class="reference-url">owasp.org/Top10/</div>
+                    </div>
+                </a>
+                <a href="https://owasp.org/www-project-api-security/" class="reference-item" target="_blank">
+                    <div class="reference-icon">🔌</div>
+                    <div class="reference-content">
+                        <div class="reference-title">OWASP API Security Top 10</div>
+                        <div class="reference-url">owasp.org/www-project-api-security/</div>
+                    </div>
+                </a>
+                <a href="https://csrc.nist.gov/publications/detail/sp/800-53/rev-5/final" class="reference-item" target="_blank">
+                    <div class="reference-icon">🏛️</div>
+                    <div class="reference-content">
+                        <div class="reference-title">NIST SP 800-53 Rev. 5 Security Controls</div>
+                        <div class="reference-url">csrc.nist.gov/publications/detail/sp/800-53/rev-5/final</div>
+                    </div>
+                </a>
+                <a href="https://www.nist.gov/cyberframework" class="reference-item" target="_blank">
+                    <div class="reference-icon">🛡️</div>
+                    <div class="reference-content">
+                        <div class="reference-title">NIST Cybersecurity Framework</div>
+                        <div class="reference-url">nist.gov/cyberframework</div>
+                    </div>
+                </a>
+                <a href="https://www.hhs.gov/hipaa/for-professionals/security/guidance/" class="reference-item" target="_blank">
+                    <div class="reference-icon">🏥</div>
+                    <div class="reference-content">
+                        <div class="reference-title">HHS HIPAA Security Rule Guidance</div>
+                        <div class="reference-url">hhs.gov/hipaa/for-professionals/security/guidance/</div>
+                    </div>
+                </a>
+                <a href="https://docs.aws.amazon.com/wellarchitected/latest/security-pillar/" class="reference-item" target="_blank">
+                    <div class="reference-icon">☁️</div>
+                    <div class="reference-content">
+                        <div class="reference-title">AWS Well-Architected Security Pillar</div>
+                        <div class="reference-url">docs.aws.amazon.com/wellarchitected/latest/security-pillar/</div>
+                    </div>
+                </a>
+                <a href="https://cwe.mitre.org/data/definitions/287.html" class="reference-item" target="_blank">
+                    <div class="reference-icon">🔐</div>
+                    <div class="reference-content">
+                        <div class="reference-title">CWE-287 Improper Authentication</div>
+                        <div class="reference-url">cwe.mitre.org/data/definitions/287.html</div>
+                    </div>
+                </a>
+                <a href="https://cwe.mitre.org/data/definitions/639.html" class="reference-item" target="_blank">
+                    <div class="reference-icon">🔓</div>
+                    <div class="reference-content">
+                        <div class="reference-title">CWE-639 Authorization Bypass Through User-Controlled Key</div>
+                        <div class="reference-url">cwe.mitre.org/data/definitions/639.html</div>
+                    </div>
+                </a>
+            </div>
+        </section>
+
+        <section id="history">
+            <h2>Document History</h2>
+            <div class="doc-history">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Version</th>
+                            <th>Date</th>
+                            <th>Author</th>
+                            <th>Changes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="threat-id">1.0</span></td>
+                            <td>December 19, 2025</td>
+                            <td>Security Architecture Team</td>
+                            <td>Initial threat model</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <footer>
+            <div class="footer-notice">
+                ⚠️ This document contains security-sensitive information. Distribution is limited to authorized personnel with a need to know.
+            </div>
+        </footer>
+    </main>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            themeVariables: {
+                primaryColor: '#1f2937',
+                primaryTextColor: '#e2e8f0',
+                primaryBorderColor: '#00ffaa',
+                lineColor: '#64748b',
+                secondaryColor: '#111827',
+                tertiaryColor: '#1a2332',
+                background: '#0a0e17',
+                mainBkg: '#1f2937',
+                nodeBorder: '#2d3a4f',
+                clusterBkg: '#111827',
+                clusterBorder: '#2d3a4f',
+                titleColor: '#e2e8f0',
+                edgeLabelBackground: '#111827'
+            },
+            flowchart: {
+                curve: 'basis',
+                padding: 20
+            }
+        });
+
+        // Smooth scroll for nav links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Add active state to nav on scroll
+        const sections = document.querySelectorAll('section[id]');
+        const navLinks = document.querySelectorAll('.nav-links a');
+
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                if (scrollY >= sectionTop - 100) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.style.color = '';
+                link.style.background = '';
+                if (link.getAttribute('href') === `#${current}`) {
+                    link.style.color = '#00ffaa';
+                    link.style.background = '#1a2332';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
